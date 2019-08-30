@@ -26,6 +26,21 @@ struct Token {
 // 現在着目しているトークン
 Token *token;
 
+char *user_input;
+
+void error_at(char *loc, char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+
+  int pos = loc - user_input;
+  fprintf(stderr, "%s\n", user_input);
+  fprintf(stderr, "%*s", pos, "");  // pos個の空白を出力
+  fprintf(stderr, "^ ");
+  vfprintf(stderr, fmt, ap);
+  fprintf(stderr, "\n");
+  exit(1);
+}
+
 // エラーを報告するための関数
 // printfと同じ引数を取る
 void error(char *fmt, ...) {
@@ -49,7 +64,7 @@ bool consume(char op) {
 // それ以外の場合にはエラーを報告する。
 void expect(char op) {
   if (token->kind != TK_RESERVED || token->str[0] != op)
-    error("'%c'ではありません", op);
+    error_at(token->str, "'%c'ではありません", op);
   token = token->next;
 }
 
@@ -57,7 +72,7 @@ void expect(char op) {
 // それ以外の場合にはエラーを報告する。
 int expect_number() {
   if (token->kind != TK_NUM)
-    error("数ではありません");
+    error_at(token->str, "数ではありません");
   int val = token->val;
   token = token->next;
   return val;
@@ -112,6 +127,8 @@ int main(int argc, char **argv) {
     error("引数の個数が正しくありません");
     return 1;
   }
+
+  user_input = argv[1];
 
   // トークナイズする
   token = tokenize(argv[1]);

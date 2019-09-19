@@ -3,6 +3,8 @@
 // 現在着目しているトークン
 Token *token;
 
+Node *code[100];
+
 void error_at(char *loc, char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
@@ -76,10 +78,11 @@ bool startswith(char *p, char *q) {
 }
 
 // 入力文字列pをトークナイズしてそれを返す
-Token *tokenize(char *p) {
+void tokenize() {
   Token head;
   head.next = NULL;
-  Token *cur =&head;
+  Token *cur = &head;
+  char *p = user_input;
 
   while (*p) {
     // 空白文字をスキップ
@@ -95,9 +98,15 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    if (strchr("+-*/()<>=", *p) != NULL )
+    if (strchr("+-*/()<>=;", *p) != NULL )
     {
       cur = new_token(TK_RESERVED, cur, p++, 1);
+      continue;
+    }
+
+    if ('a' <= *p && *p <= 'z') {
+      cur = new_token(TK_IDENT, cur, p++, 1);
+      cur->len = 1;
       continue;
     }
 
@@ -113,7 +122,8 @@ Token *tokenize(char *p) {
   }
 
   new_token(TK_EOF, cur, p, 0);
-  return head.next;
+  token = head.next;
+  return;
 }
 
 Node *new_node(NodeKind kind) {
@@ -135,9 +145,32 @@ Node *new_num(int val) {
   return node;
 }
 
-// expr = uquality
+// program = stmt*
+void program() {
+  int i = 0;
+  while (!at_eof())
+    code[i++] = stmt();
+  code[i] = NULL;
+}
+
+// stmt = expr ";"
+Node *stmt() {
+  Node *node = expr();
+  expect(";");
+  return node;
+}
+
+// expr = assign
 Node *expr() {
-  return equality();
+  return assign();
+}
+
+// assign = equality ("=" assign)?
+Node *assign() {
+  Node *node = equality();
+  if (consume("="))
+    node = new_binary(ND_ASSIGN, node, assign());
+  return node;
 }
 
 // equality = relational ("==" relational | "!=" relational)*
@@ -154,6 +187,7 @@ Node *equality() {
   }
 }
 
+// add ("<" add | "<=" add | ">" add ">=" add)*
 Node *relational() {
   Node *node = add();
 

@@ -43,5 +43,6 @@ try 1 '1>=1;'
 try 0 '1>=2;'
 try 42 '1;42;'
 try 37 'a=42;b=a-5;b;'
+try 42 'return 42;'
 
 echo OK

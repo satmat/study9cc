@@ -44,7 +44,7 @@ try 0 '1>=2;'
 try 42 '1;42;'
 try 37 'a=42;b=a-5;b;'
 try 42 'return 42;'
-try 1 'if (1) return 1; return 2;'
+try 1 'while (1) a=a+1;'
 try 2 'if (0) return 1; return 2;'
 
 

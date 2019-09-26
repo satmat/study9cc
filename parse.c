@@ -31,7 +31,9 @@ void error(char *fmt, ...) {
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて
 // 真を返す。それ以外の場合には偽を返す。
 bool consume(char *op) {
-  if ((token->kind != TK_RESERVED && token->kind != TK_RETURN) ||
+  if ((token->kind != TK_RESERVED &&
+      token->kind != TK_RETURN &&
+      token->kind != TK_WHILE ) ||
       strlen(op) != token->len ||
       memcmp(token->str, op, token->len))
     return false;
@@ -52,7 +54,9 @@ Token *consume_ident() {
 // 次のトークンが期待している記号ときには、トークンを1つ読み進める。
 // それ以外の場合にはエラーを報告する。
 void expect(char *op) {
-  if (token->kind != TK_RESERVED ||
+  if (( token->kind != TK_RESERVED &&
+        token->kind != TK_RETURN &&
+        token->kind != TK_WHILE ) ||
       strlen(op) != token->len ||
       memcmp(token->str, op, token->len))
     error_at(token->str, "'%s'ではありません", op);
@@ -199,7 +203,10 @@ void program() {
   code[i] = NULL;
 }
 
-// stmt = expr ";"
+// stmt = expr ";" | "return" expr ";"
+//        | "if" "(" expr ")" stmt ("else" stmt)?
+//        | "while" "(" expr ")" stmt
+//        | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 Node *stmt() {
   Node *node;
 
@@ -207,13 +214,25 @@ Node *stmt() {
     node = calloc(1, sizeof(Node));
     node->kind = ND_RETURN;
     node->lhs = expr();
+
+    if (!consume(";"))
+      error_at(token->str, "';'ではないトークンです");
+    return node;
+  } else if (consume("while")) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_WHILE;
+    expect("(");
+    node->cond = expr();
+    expect(")");
+    node->then = stmt();
+    return node;
   } else {
     node = expr();
-  }
 
-  if (!consume(";"))
-    error_at(token->str, "';'ではないトークンです");
-  return node;
+    if (!consume(";"))
+      error_at(token->str, "';'ではないトークンです");
+    return node;
+  }
 }
 
 // expr = assign
@@ -243,7 +262,7 @@ Node *equality() {
   }
 }
 
-// add ("<" add | "<=" add | ">" add ">=" add)*
+// add ("<" add | "<=" add | ">" add | ">=" add)*
 Node *relational() {
   Node *node = add();
 

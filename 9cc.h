@@ -19,6 +19,10 @@ typedef enum {
   ND_LE,     // <=
   ND_LVAR,   // ローカル変数
   ND_RETURN, // return
+  ND_IF,     // if
+  ND_WHILE,  // while
+  ND_ELSE,   // else
+  ND_FOR,    // for
   ND_NUM,    // 整数
 } NodeKind;
 
@@ -29,6 +33,8 @@ struct Node {
   NodeKind kind;
   Node *lhs;
   Node *rhs;
+  Node *cond;
+  Node *then;
   int val;
   int offset;
  };

@@ -33,7 +33,9 @@ void error(char *fmt, ...) {
 bool consume(char *op) {
   if ((token->kind != TK_RESERVED &&
       token->kind != TK_RETURN &&
-      token->kind != TK_WHILE ) ||
+      token->kind != TK_WHILE &&
+      token->kind != TK_IF &&
+      token->kind != TK_ELSE ) ||
       strlen(op) != token->len ||
       memcmp(token->str, op, token->len))
     return false;
@@ -56,7 +58,9 @@ Token *consume_ident() {
 void expect(char *op) {
   if (( token->kind != TK_RESERVED &&
         token->kind != TK_RETURN &&
-        token->kind != TK_WHILE ) ||
+        token->kind != TK_WHILE &&
+        token->kind != TK_IF &&
+        token->kind != TK_ELSE ) ||
       strlen(op) != token->len ||
       memcmp(token->str, op, token->len))
     error_at(token->str, "'%s'ではありません", op);
@@ -221,6 +225,14 @@ Node *stmt() {
   } else if (consume("while")) {
     node = calloc(1, sizeof(Node));
     node->kind = ND_WHILE;
+    expect("(");
+    node->cond = expr();
+    expect(")");
+    node->then = stmt();
+    return node;
+  } else if (consume("if")) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_IF;
     expect("(");
     node->cond = expr();
     expect(")");

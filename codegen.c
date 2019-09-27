@@ -1,5 +1,7 @@
 #include "9cc.h"
 
+int labelseq = 0;
+
 void gen_lval(Node *node) {
   if (node->kind != ND_LVAR)
     error("代入の左辺値が変数ではありません。");
@@ -34,6 +36,17 @@ void gen(Node *node) {
     printf("  pop rax\n");
     printf("  mov [rax], rdi\n");
     printf("  push rdi\n");
+    return;
+  } else if (node->kind == ND_WHILE) {
+    printf(".Lbegin%d:\n", labelseq);
+    gen(node->cond);
+    printf("  pop rax\n");
+    printf("  cmp rax, 0\n");
+    printf("  je .Lend%d\n", labelseq);
+    gen(node->then);
+    printf("  jmp .Lbegin%d\n", labelseq);
+    printf(".Lend%d:\n", labelseq);
+    labelseq++;
     return;
   }
 

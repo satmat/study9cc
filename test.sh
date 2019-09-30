@@ -47,6 +47,8 @@ try 42 'return 42;'
 try 4 'a=1; while (a<4) a=a+1; return a;'
 try 2 'a=1; if (a==1) return 2; return 3;'
 try 3 'a=4; if (a==1) return 2; return 3;'
+try 2 'a=1; if (a==1) return 2; else return 3;'
+try 3 'a=4; if (a==1) return 2; else return 3;'
 
 
 echo OK

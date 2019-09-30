@@ -49,12 +49,24 @@ void gen(Node *node) {
     labelseq++;
     return;
   } else if (node->kind == ND_IF ) {
-    gen(node->cond);
-    printf("  pop rax\n");
-    printf("  cmp rax, 0\n");
-    printf("  je .Lend%d\n", labelseq);
-    gen(node->then);
-    printf(".Lend%d:\n", labelseq);
+    if(node->els){
+      gen(node->cond);
+      printf("  pop rax\n");
+      printf("  cmp rax, 0\n");
+      printf("  je .Lelse%d\n", labelseq);
+      gen(node->then);
+      printf("  jmp .Lend%d\n", labelseq);
+      printf(".Lelse%d:\n", labelseq);
+      gen(node->els);
+      printf(".Lend%d:\n", labelseq);
+    } else {
+      gen(node->cond);
+      printf("  pop rax\n");
+      printf("  cmp rax, 0\n");
+      printf("  je .Lend%d\n", labelseq);
+      gen(node->then);
+      printf(".Lend%d:\n", labelseq);
+    }
     labelseq++;
     return;
   }

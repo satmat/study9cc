@@ -237,6 +237,9 @@ Node *stmt() {
     node->cond = expr();
     expect(")");
     node->then = stmt();
+    if(consume("else")) {
+      node->els = stmt();
+    }
     return node;
   } else {
     node = expr();

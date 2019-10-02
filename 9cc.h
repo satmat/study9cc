@@ -33,7 +33,9 @@ struct Node {
   NodeKind kind;
   Node *lhs;
   Node *rhs;
+  Node *init;
   Node *cond;
+  Node *inc;
   Node *then;
   Node *els;
   int val;

@@ -49,6 +49,6 @@ try 2 'a=1; if (a==1) return 2; return 3;'
 try 3 'a=4; if (a==1) return 2; return 3;'
 try 2 'a=1; if (a==1) return 2; else return 3;'
 try 3 'a=4; if (a==1) return 2; else return 3;'
-
+try 5 'a=8; b=0; for (a=1; a<6; a=a+1) b=b+1; return b;'
 
 echo OK

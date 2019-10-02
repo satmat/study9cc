@@ -35,7 +35,8 @@ bool consume(char *op) {
       token->kind != TK_RETURN &&
       token->kind != TK_WHILE &&
       token->kind != TK_IF &&
-      token->kind != TK_ELSE ) ||
+      token->kind != TK_ELSE &&
+      token->kind != TK_FOR ) ||
       strlen(op) != token->len ||
       memcmp(token->str, op, token->len))
     return false;
@@ -60,7 +61,8 @@ void expect(char *op) {
         token->kind != TK_RETURN &&
         token->kind != TK_WHILE &&
         token->kind != TK_IF &&
-        token->kind != TK_ELSE ) ||
+        token->kind != TK_ELSE &&
+        token->kind != TK_FOR ) ||
       strlen(op) != token->len ||
       memcmp(token->str, op, token->len))
     error_at(token->str, "'%s'ではありません", op);
@@ -227,6 +229,24 @@ Node *stmt() {
     node->kind = ND_WHILE;
     expect("(");
     node->cond = expr();
+    expect(")");
+    node->then = stmt();
+    return node;
+  } else if (consume("for")) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_FOR;
+    expect("(");
+    if(!consume(";")) {
+      node->init = expr();
+      expect(";");
+    }
+    if(!consume(";")) {
+      node->cond = expr();
+      expect(";");
+    }
+    if(!consume(";")) {
+      node->inc = expr();
+    }
     expect(")");
     node->then = stmt();
     return node;

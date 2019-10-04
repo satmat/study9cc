@@ -23,6 +23,7 @@ typedef enum {
   ND_WHILE,  // while
   ND_ELSE,   // else
   ND_FOR,    // for
+  ND_BLOCK,  // ブロック
   ND_NUM,    // 整数
 } NodeKind;
 
@@ -38,6 +39,8 @@ struct Node {
   Node *inc;
   Node *then;
   Node *els;
+  Node *body;
+  Node *next;
   int val;
   int offset;
  };

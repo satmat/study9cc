@@ -155,7 +155,7 @@ void tokenize() {
       continue;
     }
 
-    if (strchr("+-*/()<>=;", *p) != NULL )
+    if (strchr("+-*/()<>{}=;", *p) != NULL )
     {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
@@ -209,17 +209,19 @@ void program() {
   code[i] = NULL;
 }
 
-// stmt = expr ";" | "return" expr ";"
-//        | "if" "(" expr ")" stmt ("else" stmt)?
+// stmt = expr ";"
+//        | "return" expr ";"
 //        | "while" "(" expr ")" stmt
 //        | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+//        | "if" "(" expr ")" stmt ("else" stmt)?
+//        | "{" stmt* "}"
 Node *stmt() {
   Node *node;
 
   if (consume("return")) {
     node = calloc(1, sizeof(Node));
     node->kind = ND_RETURN;
-    node->lhs = expr();
+    node->rhs = expr();
 
     if (!consume(";"))
       error_at(token->str, "';'ではないトークンです");
@@ -260,6 +262,19 @@ Node *stmt() {
     if(consume("else")) {
       node->els = stmt();
     }
+    return node;
+  } else if (consume("{")) {
+    Node head = {};
+    Node *cur = &head;
+
+    while(!consume("}")) {
+      cur->next = stmt();
+      cur = cur->next;
+    }
+
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_BLOCK;
+    node->body = head.next;
     return node;
   } else {
     node = expr();

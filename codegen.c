@@ -13,7 +13,7 @@ void gen_lval(Node *node) {
 
 void gen(Node *node) {
   if (node->kind == ND_RETURN) {
-    gen(node->lhs);
+    gen(node->rhs);
     printf("  pop rax\n");
     printf("  mov rsp, rbp\n");
     printf("  pop rbp\n");
@@ -87,6 +87,10 @@ void gen(Node *node) {
       printf(".Lend%d:\n", labelseq);
     }
     labelseq++;
+    return;
+  } else if (node->kind == ND_BLOCK) {
+    for(Node* n = node->body; n; n = n->next)
+      gen(n);
     return;
   }
 

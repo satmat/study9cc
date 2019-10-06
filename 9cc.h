@@ -8,23 +8,24 @@
 
 // 抽象構文木のノードの種類
 typedef enum {
-  ND_ADD,    // +
-  ND_SUB,    // -
-  ND_MUL,    // *
-  ND_DIV,    // /
-  ND_ASSIGN, // =
-  ND_EQ,     // ==
-  ND_NE,     // !=
-  ND_LT,     // <
-  ND_LE,     // <=
-  ND_LVAR,   // ローカル変数
-  ND_RETURN, // return
-  ND_IF,     // if
-  ND_WHILE,  // while
-  ND_ELSE,   // else
-  ND_FOR,    // for
-  ND_BLOCK,  // ブロック
-  ND_NUM,    // 整数
+  ND_ADD,      // +
+  ND_SUB,      // -
+  ND_MUL,      // *
+  ND_DIV,      // /
+  ND_ASSIGN,   // =
+  ND_EQ,       // ==
+  ND_NE,       // !=
+  ND_LT,       // <
+  ND_LE,       // <=
+  ND_LVAR,     // ローカル変数
+  ND_FUNCCALL, // 関数呼び出し
+  ND_RETURN,   // return
+  ND_IF,       // if
+  ND_WHILE,    // while
+  ND_ELSE,     // else
+  ND_FOR,      // for
+  ND_BLOCK,    // ブロック
+  ND_NUM,      // 整数
 } NodeKind;
 
 typedef struct Node Node;
@@ -43,6 +44,7 @@ struct Node {
   Node *next;
   int val;
   int offset;
+  char* funcname;
  };
 
 // トークンの種類

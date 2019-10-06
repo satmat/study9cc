@@ -1,9 +1,24 @@
+#include <string.h>
 #include "9cc.h"
 
 // 現在着目しているトークン
 Token *token;
 
 Node *code[100];
+
+// include string.hしても関数が見つからずにwarningになってしまうため
+// 解決策が見つかるまで自前で定義
+char *strndup(const char *s, size_t n) {
+    char *p = memchr(s, '\0', n);
+    if (p != NULL)
+        n = p - s;
+    p = malloc(n + 1);
+    if (p != NULL) {
+        memcpy(p, s, n);
+        p[n] = '\0';
+    }
+    return p;
+}
 
 void error_at(char *loc, char *fmt, ...) {
   va_list ap;
@@ -366,6 +381,9 @@ Node *unary() {
   return primary();
 }
 
+// primary = num
+//         | ident ( "(" ")" )?
+//         | "(" expr ")"
 Node *primary() {
   // 次のトークンが"("なら、"(" expr ")"のはず
   if (consume("(")) {
@@ -377,8 +395,14 @@ Node *primary() {
   Token *tok = consume_ident();
   if (tok) {
     Node *node = calloc(1, sizeof(Node));
-    node->kind = ND_LVAR;
-    node->offset = (tok->str[0] - 'a' + 1) * 8;
+    if (consume("(")) {
+      node->kind = ND_FUNCCALL;
+      node->funcname = strndup(tok->str, tok->len);
+      consume(")");
+    } else {
+      node->kind = ND_LVAR;
+      node->offset = (tok->str[0] - 'a' + 1) * 8;
+    }
     return node;
   }
 

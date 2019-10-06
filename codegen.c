@@ -28,6 +28,9 @@ void gen(Node *node) {
     printf("  mov rax, [rax]\n");
     printf("  push rax\n");
     return;
+  } else if (node->kind == ND_FUNCCALL) {
+    printf("  call %s\n", node->funcname);
+    return;
   } else if (node->kind == ND_ASSIGN) {
     gen_lval(node->lhs);
     gen(node->rhs);

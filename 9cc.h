@@ -75,6 +75,20 @@ struct Token {
 // 現在着目しているトークン
 extern Token *token;
 
+// ローカル変数の型
+typedef struct LVar LVar;
+
+// ローカル変数の型
+struct LVar {
+  LVar *next; // 次の変数かNULL
+  char *name;
+  int len;
+  int offset;
+};
+
+// ローカル変数
+extern LVar *locals;
+
 extern Node *code[100];
 
 extern char *user_input;

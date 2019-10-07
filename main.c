@@ -1,5 +1,6 @@
 #include "9cc.h"
 
+LVar *locals;
 char *user_input;
 
 int main(int argc, char **argv) {

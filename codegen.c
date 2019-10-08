@@ -1,5 +1,7 @@
 #include "9cc.h"
 
+static char *argreg8[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+
 int labelseq = 0;
 
 void gen_lval(Node *node) {
@@ -29,7 +31,28 @@ void gen(Node *node) {
     printf("  push rax\n");
     return;
   } else if (node->kind == ND_FUNCCALL) {
+    int nargs = 0;
+    for (Node *arg = node->args; arg; arg = arg->next) {
+      gen(arg);
+      nargs;
+    }
+
+    for (int i = nargs - 1; i >= 0; i--)
+      printf("  pop %s\n", argreg8[i]);
+
+    printf("  mov rax, rsp\n");
+    printf("  and rax, 15\n");
+    printf("  jnz .L.call.%d\n", labelseq);
+    printf("  mov rax, 0\n");
     printf("  call %s\n", node->funcname);
+    printf("  jmp .L.end.%d\n", labelseq);
+    printf(".L.call.%d:\n", labelseq);
+    printf("  sub rsp, 8\n");
+    printf("  mov rax, 0\n");
+    printf("  call %s\n", node->funcname);
+    printf("  add rsp, 8\n");
+    printf(".L.end.%d:\n", labelseq);
+    printf("  push rax\n");
     return;
   } else if (node->kind == ND_ASSIGN) {
     gen_lval(node->lhs);

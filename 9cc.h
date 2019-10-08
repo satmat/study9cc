@@ -44,7 +44,8 @@ struct Node {
   Node *next;
   int val;
   int offset;
-  char* funcname;
+  char *funcname;
+  Node *args;
  };
 
 // トークンの種類

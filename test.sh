@@ -55,6 +55,7 @@ try 42 '{a=42; return a;}'
 try 8 'a=1;b=1; while (a<4) {a=a+1; b=b+1;} return a+b;'
 try 5 'a=1; b=1; if (a==1) {a=2;b=3;} else {a=4;b=5;} return a+b;'
 try 9 'a=6; b=1; if (a==1) {a=2;b=3;} else {a=4;b=5;} return a+b;'
-try 0 'f(); return 0;'
+try 0 'foo(); return 0;'
+try 0 'foo(1,2); return 0;'
 
 echo OK

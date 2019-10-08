@@ -4,6 +4,8 @@
 // 現在着目しているトークン
 Token *token;
 
+LVar *locals;
+
 Node *code[100];
 
 // include string.hしても関数が見つからずにwarningになってしまうため
@@ -395,8 +397,23 @@ Node *unary() {
   return primary();
 }
 
+// func-args = "(" (assign ("," assign )* )? ")"
+Node *func_args() {
+  if(consume(")"))
+    return NULL;
+
+  Node *head = assign();
+  Node *cur = head;
+  while(consume(",")) {
+    cur->next = assign();
+    cur = cur->next;
+  }
+  expect(")");
+  return cur;
+}
+
 // primary = num
-//         | ident ( "(" ")" )?
+//         | ident func-args?
 //         | "(" expr ")"
 Node *primary() {
   // 次のトークンが"("なら、"(" expr ")"のはず
@@ -409,9 +426,11 @@ Node *primary() {
   Token *tok = consume_ident();
   if (tok) {
     Node *node = calloc(1, sizeof(Node));
+    // Function call
     if (consume("(")) {
       node->kind = ND_FUNCCALL;
       node->funcname = strndup(tok->str, tok->len);
+      node->args = func_args();
       consume(")");
     } else {
       node->kind = ND_LVAR;

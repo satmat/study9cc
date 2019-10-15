@@ -1,25 +1,28 @@
 #include "9cc.h"
 
+static char *argreg4[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
 static char *argreg8[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 int labelseq = 0;
+char *funcname;
 
 void gen_lval(Node *node) {
   if (node->kind != ND_LVAR)
     error("代入の左辺値が変数ではありません。");
 
   printf("  mov rax, rbp\n");
-  printf("  sub rax, %d\n", node->offset);
+  printf("  sub rax, %d\n", node->var->offset);
+  printf("  lea rax, [rbp-%d]\n", node->var->offset);
   printf("  push rax\n");
 }
 
 void gen(Node *node) {
   if (node->kind == ND_RETURN) {
-    gen(node->rhs);
-    printf("  pop rax\n");
-    printf("  mov rsp, rbp\n");
-    printf("  pop rbp\n");
-    printf("  ret\n");
+    if (node->rhs) {
+      gen(node->rhs);
+      printf("  pop rax\n");
+    }
+    printf("  jmp .L.return.%s\n", funcname);
     return;
   } else if (node->kind == ND_NUM) {
     printf("  push %d\n", node->val);
@@ -27,17 +30,19 @@ void gen(Node *node) {
   } else if (node->kind == ND_LVAR) {
     gen_lval(node);
     printf("  pop rax\n");
-    printf("  mov rax, [rax]\n");
+    printf("  movsxd rax, dword ptr [rax]\n");  // load 型はint=4bytesのみとみなす
     printf("  push rax\n");
     return;
   } else if (node->kind == ND_FUNCCALL) {
     int nargs = 0;
     for (Node *arg = node->args; arg; arg = arg->next) {
       gen(arg);
-      nargs;
+      nargs++;
     }
 
-    for (int i = nargs - 1; i >= 0; i--)
+    // c->b->aの順でstackに積むので
+    // 第1引数から順にa->b->cとなるように下ろす
+    for (int i = 0; i <= nargs - 1; i++)
       printf("  pop %s\n", argreg8[i]);
 
     printf("  mov rax, rsp\n");
@@ -53,6 +58,7 @@ void gen(Node *node) {
     printf("  add rsp, 8\n");
     printf(".L.end.%d:\n", labelseq);
     printf("  push rax\n");
+    labelseq++;
     return;
   } else if (node->kind == ND_ASSIGN) {
     gen_lval(node->lhs);
@@ -60,7 +66,7 @@ void gen(Node *node) {
 
     printf("  pop rdi\n");
     printf("  pop rax\n");
-    printf("  mov [rax], rdi\n");
+    printf("  mov [rax], edi\n");  // store 型はint=4bytesのみとみなす
     printf("  push rdi\n");
     return;
   } else if (node->kind == ND_WHILE) {
@@ -163,4 +169,44 @@ void gen(Node *node) {
   }
 
   printf("  push rax\n");
+}
+
+void load_arg(LVar *var, int idx) {
+  // int
+  printf("  mov [rbp-%d], %s\n", var->offset, argreg4[idx]);
+}
+
+void emit_text(Program *prog) {
+  printf(".text\n");
+
+  for (Function *fn = prog->fns; fn; fn = fn->next) {
+    printf(".global %s\n", fn->name);
+    printf("%s:\n", fn->name);
+    funcname = fn->name;
+
+    // Prologue
+    printf("  push rbp\n");
+    printf("  mov rbp, rsp\n");
+    printf("  sub rsp, %d\n", fn->stack_size);
+
+    // Push arguments to the stack
+    int i = 0;
+    for (LVar *lv = fn->params; lv; lv = lv->next)
+      load_arg(lv, i++);
+
+      // Emit code
+      for (Node *node = fn->node; node; node =node->next)
+        gen(node);
+
+      // Epilogue
+      printf(".L.return.%s:\n", funcname);
+      printf("  mov rsp, rbp\n");
+      printf("  pop rbp\n");
+      printf("  ret\n");
+  }
+}
+
+void codegen(Program *prog) {
+  printf(".intel_syntax noprefix\n");
+  emit_text(prog);
 }

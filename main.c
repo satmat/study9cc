@@ -11,31 +11,20 @@ int main(int argc, char **argv) {
   // トークナイズしてパースする
   user_input = argv[1];
   tokenize();
-  program();
+  Program *prog = program();
 
-  // アセンブリの前半部分を出力
-  printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
-  printf("main:\n");
+  for (Function *fn = prog->fns; fn; fn = fn->next) {
+    int offset = 0;
+    for (LVar *lv = fn->locals; lv; lv = lv->next) {
+      offset = align_to(offset, 4);  // int型のoffset
+      offset += 4;  // int型のsize
+      lv->offset = offset;
+    }
+    fn->stack_size = align_to(offset, 8);
 
-  // プロローグ
-  // 変数26個分の領域を確保する
-  printf("  push rbp\n");
-  printf("  mov rbp, rsp\n");
-  printf("  sub rsp, 208\n");
-
-  for (int i = 0; code[i]; i++) {
-    gen(code[i]);
-
-    // 式の評価結果としてスタックに一つの値が残っている
-    // はずなので、スタックが溢れないようにポップしておく
-    printf("  pop rax\n");
   }
 
-  // エピローグ
-  // 最後の式の結果がRAXに残っているのでそれが返り値になる
-  printf("  mov rsp, rbp\n");
-  printf("  pop rbp\n");
-  printf("  ret\n");
+  codegen(prog);
+
   return 0;
 }

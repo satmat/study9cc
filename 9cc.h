@@ -6,6 +6,16 @@
 #include <string.h>
 
 
+// ローカル変数の型
+typedef struct LVar LVar;
+
+// ローカル変数の型
+struct LVar {
+  LVar *next; // 次の変数かNULL
+  char *name;
+  int offset;
+};
+
 // 抽象構文木のノードの種類
 typedef enum {
   ND_ADD,      // +
@@ -42,11 +52,11 @@ struct Node {
   Node *els;
   Node *body;
   Node *next;
+  LVar *var;
   int val;
-  int offset;
   char *funcname;
   Node *args;
- };
+};
 
 // トークンの種類
 typedef enum {
@@ -76,21 +86,20 @@ struct Token {
 // 現在着目しているトークン
 extern Token *token;
 
-// ローカル変数の型
-typedef struct LVar LVar;
-
-// ローカル変数の型
-struct LVar {
-  LVar *next; // 次の変数かNULL
+typedef struct Function Function;
+struct Function {
+  Function *next;
   char *name;
-  int len;
-  int offset;
+  LVar *params;
+
+  Node *node;
+  LVar *locals;
+  int stack_size;
 };
 
-// ローカル変数
-extern LVar *locals;
-
-extern Node *code[100];
+typedef struct {
+  Function *fns;
+} Program;
 
 extern char *user_input;
 
@@ -102,13 +111,15 @@ void expect(char *op);
 int expect_number();
 bool at_eof();
 Token *new_token(TokenKind kind, Token *cur, char *str, int len);
+int align_to(int n, int align);
 bool startswith(char *p, char *q);
 int is_alnum(char c);
 void tokenize();
 Node *new_node(NodeKind kind);
 Node *new_binary(NodeKind kind, Node *lhs, Node *rhs);
 Node *new_num(int val);
-void program();
+Program *program();
+Function *function();
 Node *stmt();
 Node *assign();
 Node *expr();
@@ -119,3 +130,4 @@ Node *mul();
 Node *unary();
 Node *primary();
 void gen(Node *node);
+void codegen(Program *prog);

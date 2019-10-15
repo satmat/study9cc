@@ -4,9 +4,7 @@
 // 現在着目しているトークン
 Token *token;
 
-LVar *locals;
-
-Node *code[100];
+static LVar *locals;
 
 // include string.hしても関数が見つからずにwarningになってしまうため
 // 解決策が見つかるまで自前で定義
@@ -47,7 +45,7 @@ void error(char *fmt, ...) {
 
 LVar *find_lvar(Token *tok) {
   for (LVar *var = locals; var; var = var->next)
-    if(var->len == tok->len && !memcmp(tok->str, var->name, var->len))
+    if(strlen(var->name) == tok->len && !memcmp(tok->str, var->name, tok->len))
       return var;
   return NULL;
 }
@@ -68,8 +66,8 @@ bool consume(char *op) {
   return true;
 }
 
-// 次のトークンがローカル変数のときには、トークンを1つ読み進めて
-// ローカル変数のトークン返す。それ以外の場合にはNULLを返す。
+// 次のトークンが識別子のときには、トークンを1つ読み進めて
+// そのトークンを返す。それ以外の場合にはNULLを返す。
 Token *consume_ident() {
   if (token->kind != TK_IDENT)
     return NULL;
@@ -103,6 +101,16 @@ int expect_number() {
   return val;
 }
 
+// 次のトークンが識別子のときには、トークンを1つ読み進めて
+// 識別子の文字列を返す。それ以外の場合にはNULLを返す。
+char *expect_ident() {
+  if (token->kind != TK_IDENT)
+    return NULL;
+  Token *tok = token;
+  token = token->next;
+  return strndup(tok->str, tok->len);
+}
+
 bool at_eof() {
   return token->kind == TK_EOF;
 }
@@ -115,6 +123,23 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   tok->len = len;
   cur->next = tok;
   return tok;
+}
+
+LVar *new_var(char *name) {
+  LVar *var = calloc(1, sizeof(LVar));
+  var->name = name;
+  return var;
+}
+
+LVar *new_lvar(char *name) {
+  LVar *var = new_var(name);
+  var->next = locals;
+  locals = var;
+  return var;
+}
+
+int align_to(int n, int align) {
+  return (n + align - 1) & ~(align - 1);
 }
 
 bool startswith(char *p, char *q) {
@@ -183,7 +208,7 @@ void tokenize() {
       continue;
     }
 
-    if (strchr("+-*/()<>{}=;", *p) != NULL )
+    if (strchr("+-*/()<>{}=;,", *p) != NULL )
     {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
@@ -232,12 +257,85 @@ Node *new_num(int val) {
   return node;
 }
 
-// program = stmt*
-void program() {
-  int i = 0;
-  while (!at_eof())
-    code[i++] = stmt();
-  code[i] = NULL;
+// program = function*
+Program *program(void) {
+  Function head = {};
+  Function *cur = &head;
+
+  while (!at_eof()) {
+    Function *fn = function();
+    if(!fn)
+      continue;
+    cur->next = fn;
+    cur = cur->next;
+    continue;
+  }
+
+  Program *prog = calloc(1, sizeof(Program));
+  prog->fns = head.next;
+  return prog;
+}
+
+// declarator = ident
+void declarator(char **name) {
+  *name = expect_ident(&name);
+}
+
+// param = declarator
+LVar *read_func_param(void) {
+  char *name = NULL;
+  declarator(&name);
+  LVar *lv = new_lvar(name);
+  return lv;
+}
+
+// params = param ("," param)*
+void read_func_params(Function *fn) {
+  if (consume(")"))
+    return;
+
+  Token *tok = token;
+
+//  fn->params = read_func_param();
+//  LVar *cur = fn->params;
+  LVar *cur = read_func_param();
+
+  while (!consume(")")) {
+    expect(",");
+    cur = read_func_param();
+  }
+  fn->params = cur;
+}
+
+// function = declarator "(" params? ")" ("{" stmt* "}" | ";")
+Function *function(void) {
+  locals = NULL;
+
+  char *name = NULL;
+  declarator(&name);
+
+  // Construct a function object
+  Function *fn = calloc(1, sizeof(Function));
+  fn->name = name;
+  expect("(");
+  read_func_params(fn);
+
+  if (consume(";")) {
+    return NULL;
+  }
+
+  // Read function body
+  Node head = {};
+  Node *cur = &head;
+  expect("{");
+  while (!consume("}")) {
+    cur->next = stmt();
+    cur = cur->next;
+  }
+
+  fn->node = head.next;
+  fn->locals = locals;
+  return fn;
 }
 
 // stmt = expr ";"
@@ -409,7 +507,7 @@ Node *func_args() {
     cur = cur->next;
   }
   expect(")");
-  return cur;
+  return head;
 }
 
 // primary = num
@@ -436,15 +534,14 @@ Node *primary() {
       node->kind = ND_LVAR;
       LVar *lvar = find_lvar(tok);
       if (lvar) {
-        node->offset = lvar->offset;
+        node->var = lvar;
       } else {
         lvar = calloc(1, sizeof(LVar));
         lvar->next = locals;
-        lvar->name = tok->str;
-        lvar->len = tok->len;
+        lvar->name = strndup(tok->str, tok->len);
         if(locals)
           lvar->offset = locals->offset + 8;
-        node->offset = lvar->offset;
+        node->var = lvar;
         locals = lvar;
       }
     }

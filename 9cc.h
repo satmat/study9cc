@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct Type Type;
 
 // ローカル変数の型
 typedef struct LVar LVar;
@@ -12,8 +13,9 @@ typedef struct LVar LVar;
 // ローカル変数の型
 struct LVar {
   LVar *next; // 次の変数かNULL
+  Type *ty;
   char *name;
-  int offset;
+  int offset; // RBPからのオフセット
 };
 
 // 抽象構文木のノードの種類
@@ -43,6 +45,7 @@ typedef struct Node Node;
 // 抽象構文木のノードの型
 struct Node {
   NodeKind kind;
+  Type *ty;      // intやintへのポインタなどの型
   Node *lhs;
   Node *rhs;
   Node *init;
@@ -52,8 +55,14 @@ struct Node {
   Node *els;
   Node *body;
   Node *next;
+
+  // 変数
   LVar *var;
+
+  // 整数リテラル
   int val;
+
+  // 関数
   char *funcname;
   Node *args;
 };
@@ -79,6 +88,7 @@ struct Token {
   TokenKind kind;  // トークンの型
   Token *next;     // 次のトークン
   int val;         // kindがTK_NUMの場合、その数値
+  Type *ty;        // kindがTK_NUMの場合、その数値
   char *str;       // トークン文字列
   int len;         // トークンの長さ
 };
@@ -100,6 +110,16 @@ struct Function {
 typedef struct {
   Function *fns;
 } Program;
+
+typedef enum {
+  TY_INT,
+} TypeKind;
+
+struct Type {
+  TypeKind kind;
+  int size;
+  int align;
+};
 
 extern char *user_input;
 

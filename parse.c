@@ -66,6 +66,18 @@ bool consume(char *op) {
   return true;
 }
 
+// 次のトークンが期待している文字列のときには、トークンを1つ読み進めて
+// そのトークンを返す。それ以外の場合にはNULLを返す。
+Token *peek(char *s) {
+  if ((token->kind != TK_INT) ||
+       strlen(s) != token->len ||
+       memcmp(token->str, s, token->len))
+    return NULL;
+  Token *tok = token;
+  token = token->next;
+  return tok;
+}
+
 // 次のトークンが識別子のときには、トークンを1つ読み進めて
 // そのトークンを返す。それ以外の場合にはNULLを返す。
 Token *consume_ident() {
@@ -342,6 +354,11 @@ Function *function(void) {
   fn->node = head.next;
   fn->locals = locals;
   return fn;
+}
+
+// 次のトークンが型を示すものであればtrueを返す
+static bool is_typename(void) {
+  return peek("int");
 }
 
 // stmt = expr ";"

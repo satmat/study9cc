@@ -38,6 +38,7 @@ typedef enum {
   ND_FOR,      // for
   ND_BLOCK,    // ブロック
   ND_NUM,      // 整数
+  ND_NULL,     // Empty statement
 } NodeKind;
 
 typedef struct Node Node;
@@ -142,7 +143,6 @@ Node *new_binary(NodeKind kind, Node *lhs, Node *rhs);
 Node *new_num(int val);
 Program *program();
 Function *function();
-Node *stmt();
 Node *assign();
 Node *expr();
 Node *equality();
@@ -153,3 +153,5 @@ Node *unary();
 Node *primary();
 void gen(Node *node);
 void codegen(Program *prog);
+
+extern Type *int_type;

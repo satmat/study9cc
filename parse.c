@@ -1,10 +1,17 @@
 #include <string.h>
 #include "9cc.h"
 
+Type *int_type = &(Type){ TY_INT, 4, 4};
+
 // 現在着目しているトークン
 Token *token;
 
 static LVar *locals;
+
+static Node *declaration(void);
+static bool is_typename(void);
+static Node *stmt(void);
+static Node *stmt2(void);
 
 // include string.hしても関数が見つからずにwarningになってしまうため
 // 解決策が見つかるまで自前で定義
@@ -143,8 +150,9 @@ LVar *new_var(char *name) {
   return var;
 }
 
-LVar *new_lvar(char *name) {
+LVar *new_lvar(char *name, Type *ty) {
   LVar *var = new_var(name);
+  var->ty = ty;
   var->next = locals;
   locals = var;
   return var;
@@ -294,6 +302,37 @@ Program *program(void) {
   return prog;
 }
 
+// basetype = buildin-type
+//
+// builtin-type = "int"
+static Type *basetype() {
+  if (!is_typename())
+    error_at(token->str, "型名ではありません。");
+
+  enum {
+    INT = 1 << 8,
+  };
+
+  Type *ty = int_type;
+  int counter = 0;
+
+  while (is_typename()) {
+    Token *tok = token;
+
+    if (consume("int"))
+      counter += INT;
+
+    switch (counter) {
+      case INT:
+        ty = int_type;
+        break;
+      default:
+        error_at(tok->str, "無効な型です。");
+    }
+  }
+  return ty;
+}
+
 // declarator = ident
 void declarator(char **name) {
   *name = expect_ident(&name);
@@ -301,9 +340,10 @@ void declarator(char **name) {
 
 // param = declarator
 LVar *read_func_param(void) {
+  Type *ty = basetype();
   char *name = NULL;
   declarator(&name);
-  LVar *lv = new_lvar(name);
+  LVar *lv = new_lvar(name, ty);
   return lv;
 }
 
@@ -356,18 +396,42 @@ Function *function(void) {
   return fn;
 }
 
+// declaration = 
+static Node *declaration(void) {
+  Token *tok = token;
+  Type *ty = basetype();
+
+  char *name = NULL;
+  declarator(&name);
+  LVar *var = new_lvar(name, ty);
+
+  if(consume(";")) {
+    return new_node(ND_NULL);
+  }
+
+  error_at(tok->str, "型定義の方法が不正です。");
+  return NULL;
+}
+
 // 次のトークンが型を示すものであればtrueを返す
 static bool is_typename(void) {
   return peek("int");
 }
 
-// stmt = expr ";"
+static Node *stmt(void) {
+  Node *node = stmt2();
+  return node;
+}
+
+// stmt2 = expr ";"
 //        | "return" expr ";"
 //        | "while" "(" expr ")" stmt
 //        | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //        | "if" "(" expr ")" stmt ("else" stmt)?
 //        | "{" stmt* "}"
-Node *stmt() {
+//        | ";"
+//        | declaration
+Node *stmt2() {
   Node *node;
 
   if (consume("return")) {
@@ -428,6 +492,8 @@ Node *stmt() {
     node->kind = ND_BLOCK;
     node->body = head.next;
     return node;
+  } else if (is_typename()) {
+    return declaration();
   } else {
     node = expr();
 

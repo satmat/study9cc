@@ -17,7 +17,9 @@ void gen_lval(Node *node) {
 }
 
 void gen(Node *node) {
-  if (node->kind == ND_RETURN) {
+  if (node->kind == ND_NULL) {
+    return;
+  } else if (node->kind == ND_RETURN) {
     if (node->rhs) {
       gen(node->rhs);
       printf("  pop rax\n");

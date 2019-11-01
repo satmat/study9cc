@@ -65,7 +65,8 @@ bool consume(char *op) {
       token->kind != TK_WHILE &&
       token->kind != TK_IF &&
       token->kind != TK_ELSE &&
-      token->kind != TK_FOR ) ||
+      token->kind != TK_FOR &&
+      token->kind != TK_INT ) ||
       strlen(op) != token->len ||
       memcmp(token->str, op, token->len))
     return false;
@@ -73,16 +74,14 @@ bool consume(char *op) {
   return true;
 }
 
-// 次のトークンが期待している文字列のときには、トークンを1つ読み進めて
-// そのトークンを返す。それ以外の場合にはNULLを返す。
+// 次のトークンが期待している文字列のときには、そのトークンを返す。
+// それ以外の場合にはNULLを返す。
 Token *peek(char *s) {
   if ((token->kind != TK_INT) ||
        strlen(s) != token->len ||
        memcmp(token->str, s, token->len))
     return NULL;
-  Token *tok = token;
-  token = token->next;
-  return tok;
+  return token;
 }
 
 // 次のトークンが識別子のときには、トークンを1つ読み進めて
@@ -103,7 +102,8 @@ void expect(char *op) {
         token->kind != TK_WHILE &&
         token->kind != TK_IF &&
         token->kind != TK_ELSE &&
-        token->kind != TK_FOR ) ||
+        token->kind != TK_FOR &&
+        token->kind != TK_INT ) ||
       strlen(op) != token->len ||
       memcmp(token->str, op, token->len))
     error_at(token->str, "'%s'ではありません", op);

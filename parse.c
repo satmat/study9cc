@@ -403,7 +403,7 @@ static Node *declaration(void) {
 
   char *name = NULL;
   declarator(&name);
-  LVar *var = new_lvar(name, ty);
+  new_lvar(name, ty);
 
   if(consume(";")) {
     return new_node(ND_NULL);
@@ -613,28 +613,24 @@ Node *primary() {
   Token *tok = consume_ident();
   if (tok) {
     Node *node = calloc(1, sizeof(Node));
+
     // Function call
     if (consume("(")) {
       node->kind = ND_FUNCCALL;
       node->funcname = strndup(tok->str, tok->len);
       node->args = func_args();
       consume(")");
-    } else {
-      node->kind = ND_LVAR;
-      LVar *lvar = find_lvar(tok);
-      if (lvar) {
-        node->var = lvar;
-      } else {
-        lvar = calloc(1, sizeof(LVar));
-        lvar->next = locals;
-        lvar->name = strndup(tok->str, tok->len);
-        if(locals)
-          lvar->offset = locals->offset + 8;
-        node->var = lvar;
-        locals = lvar;
-      }
+      return node;
     }
-    return node;
+
+    // Variable
+    LVar *lvar = find_lvar(tok);
+    if (lvar) {
+      node->kind = ND_LVAR;
+      node->var = lvar;
+      return node;
+    }
+    error_at(tok->str, "未定義の変数です。");
   }
 
   // そうでなければ数値のはず

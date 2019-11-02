@@ -365,10 +365,11 @@ void read_func_params(Function *fn) {
   fn->params = cur;
 }
 
-// function = declarator "(" params? ")" ("{" stmt* "}" | ";")
+// function = basetype declarator "(" params? ")" ("{" stmt* "}" | ";")
 Function *function(void) {
   locals = NULL;
 
+  Type *ty = basetype();
   char *name = NULL;
   declarator(&name);
 

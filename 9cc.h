@@ -38,6 +38,8 @@ typedef enum {
   ND_FOR,      // for
   ND_BLOCK,    // ブロック
   ND_NUM,      // 整数
+  ND_ADDR,     // unary &
+  ND_DEREF,    // unary *
   ND_NULL,     // Empty statement
 } NodeKind;
 

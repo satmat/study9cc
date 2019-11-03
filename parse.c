@@ -234,7 +234,7 @@ void tokenize() {
       continue;
     }
 
-    if (strchr("+-*/()<>{}=;,", *p) != NULL )
+    if (strchr("+-*/()<>{}=;,&", *p) != NULL )
     {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
@@ -615,11 +615,19 @@ Node *mul() {
   }
 }
 
+// unary = "+"? primary
+//       | "-"? primary
+//       | "*" unary
+//       | "&" unary
 Node *unary() {
   if (consume("+"))
     return primary();
   if (consume("-"))
     return new_binary(ND_SUB, new_num(0), primary());
+  if (consume("*"))
+    return unary();
+  if (consume("&"))
+    return unary();
   return primary();
 }
 

@@ -153,5 +153,6 @@ Node *unary();
 Node *primary();
 void gen(Node *node);
 void codegen(Program *prog);
+void add_type(Node *node);
 
 extern Type *int_type;

@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -6,6 +7,19 @@
 #include <string.h>
 
 typedef struct Type Type;
+
+typedef enum {
+  TY_INT,
+  TY_PTR,
+} TypeKind;
+
+struct Type {
+  TypeKind kind;
+  int size;
+  int align;
+
+  Type *base;
+};
 
 // ローカル変数の型
 typedef struct LVar LVar;
@@ -115,16 +129,6 @@ typedef struct {
   Function *fns;
 } Program;
 
-typedef enum {
-  TY_INT,
-} TypeKind;
-
-struct Type {
-  TypeKind kind;
-  int size;
-  int align;
-};
-
 extern char *user_input;
 
 char *strndup(const char *s, size_t n);
@@ -142,9 +146,6 @@ int align_to(int n, int align);
 bool startswith(char *p, char *q);
 int is_alnum(char c);
 void tokenize();
-Node *new_node(NodeKind kind);
-Node *new_binary(NodeKind kind, Node *lhs, Node *rhs);
-Node *new_num(int val);
 Program *program();
 Function *function();
 Node *assign();

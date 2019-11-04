@@ -31,24 +31,44 @@ LVar *new_lvar(char *name, Type *ty) {
   return var;
 }
 
+static Type *new_type(TypeKind kind, int size, int align) {
+  Type *ty = calloc(1, sizeof(Type));
+  ty->kind = kind;
+  ty->size = size;
+  ty->align = align;
+  return ty;
+}
+
 int align_to(int n, int align) {
   return (n + align - 1) & ~(align - 1);
 }
 
-Node *new_node(NodeKind kind) {
+Type *pointer_to(Type *base) {
+  Type *ty = new_type(TY_PTR, 8, 8);
+  ty->base = base;
+  return ty;
+}
+
+static Node *new_node(NodeKind kind) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
     return node;
 }
 
-Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
+static Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = new_node(kind);
   node->lhs = lhs;
   node->rhs = rhs;
   return node;
 }
 
-Node *new_num(int val) {
+static Node *new_unary(NodeKind kind, Node *expr, Token *tok) {
+  Node *node = new_node(kind);
+  node->lhs = expr;
+  return node;
+}
+
+static Node *new_num(int val) {
   Node *node = new_node(ND_NUM);
   node->val = val;
   return node;
@@ -142,7 +162,9 @@ static Type *basetype() {
 }
 
 // declarator = ident
-void declarator(char **name) {
+void declarator(Type *ty, char **name) {
+  while (consume("*"))
+    ty = pointer_to(ty);
   *name = expect_ident(&name);
 }
 
@@ -150,7 +172,7 @@ void declarator(char **name) {
 LVar *read_func_param(void) {
   Type *ty = basetype();
   char *name = NULL;
-  declarator(&name);
+  declarator(ty, &name);
   LVar *lv = new_lvar(name, ty);
   return lv;
 }
@@ -179,7 +201,7 @@ Function *function(void) {
 
   Type *ty = basetype();
   char *name = NULL;
-  declarator(&name);
+  declarator(ty, &name);
 
   // Construct a function object
   Function *fn = calloc(1, sizeof(Function));
@@ -211,7 +233,7 @@ static Node *declaration(void) {
   Type *ty = basetype();
 
   char *name = NULL;
-  declarator(&name);
+  declarator(ty, &name);
   new_lvar(name, ty);
 
   if(consume(";")) {
@@ -396,9 +418,9 @@ Node *unary() {
   if (consume("-"))
     return new_binary(ND_SUB, new_num(0), primary());
   if (consume("*"))
-    return unary();
+    return new_unary(ND_DEREF, unary(), token);
   if (consume("&"))
-    return unary();
+    return new_unary(ND_ADDR, unary(), token);
   return primary();
 }
 

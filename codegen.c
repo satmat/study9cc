@@ -6,13 +6,34 @@ static char *argreg8[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 int labelseq = 0;
 char *funcname;
 
-void gen_lval(Node *node) {
-  if (node->kind != ND_LVAR)
-    error("代入の左辺値が変数ではありません。");
+// Pushes the given node's address to the stack.
+static void gen_addr(Node *node) {
+  switch (node->kind) {
+  case ND_LVAR:
+    printf("  mov rax, rbp\n");
+    printf("  sub rax, %d\n", node->var->offset);
+    printf("  lea rax, [rbp-%d]\n", node->var->offset);
+    printf("  push rax\n");
+    return;
+  case ND_DEREF:
+    gen(node->lhs);
+    return;
+  }
+}
 
-  printf("  mov rax, rbp\n");
-  printf("  sub rax, %d\n", node->var->offset);
-  printf("  lea rax, [rbp-%d]\n", node->var->offset);
+static void gen_lval(Node *node) {
+  gen_addr(node);
+}
+
+static void load(Type *ty) {
+  printf("  pop rax\n");
+
+  if (ty->size == 4) {
+    printf("  movsxd rax, dword ptr [rax]\n");
+  } else {
+    assert(ty->size == 8);
+    printf("  mov rax, [rax]\n");
+  }
   printf("  push rax\n");
 }
 
@@ -30,10 +51,8 @@ void gen(Node *node) {
     printf("  push %d\n", node->val);
     return;
   } else if (node->kind == ND_LVAR) {
-    gen_lval(node);
-    printf("  pop rax\n");
-    printf("  movsxd rax, dword ptr [rax]\n");  // load 型はint=4bytesのみとみなす
-    printf("  push rax\n");
+    gen_addr(node);
+    load(node->ty);
     return;
   } else if (node->kind == ND_FUNCCALL) {
     int nargs = 0;
@@ -127,12 +146,11 @@ void gen(Node *node) {
       gen(n);
     return;
   } else if (node->kind == ND_ADDR) {
-    gen_lval(node->lhs);
+    gen_addr(node->lhs);
+    return;
   } else if (node->kind == ND_DEREF) {
     gen(node->lhs);
-    printf("  pop rax\n");
-    printf("  mov rax, [rax]\n");
-    printf("  push rax\n");
+    load(node->ty);
     return;
   }
 

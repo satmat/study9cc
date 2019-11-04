@@ -127,12 +127,14 @@ struct Type {
 
 extern char *user_input;
 
+char *strndup(const char *s, size_t n);
 void error_at(char *loc, char *fmt, ...);
 void error(char *fmt, ...);
 bool consume(char *op);
 Token *peek(char *s);
 Token *consume_ident();
 void expect(char *op);
+char *expect_ident();
 int expect_number();
 bool at_eof();
 Token *new_token(TokenKind kind, Token *cur, char *str, int len);

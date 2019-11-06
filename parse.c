@@ -1,4 +1,3 @@
-
 #include "9cc.h"
 
 Type *int_type = &(Type){ TY_INT, 4, 4};
@@ -177,10 +176,11 @@ static Type *basetype() {
 }
 
 // declarator = ident
-void declarator(Type *ty, char **name) {
+static Type *declarator(Type *ty, char **name) {
   while (consume("*"))
     ty = pointer_to(ty);
   *name = expect_ident(&name);
+  return ty;
 }
 
 // param = declarator
@@ -248,7 +248,7 @@ static Node *declaration(void) {
   Type *ty = basetype();
 
   char *name = NULL;
-  declarator(ty, &name);
+  ty = declarator(ty, &name);
   new_lvar(name, ty);
 
   if(consume(";")) {

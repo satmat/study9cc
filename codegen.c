@@ -37,6 +37,20 @@ static void load(Type *ty) {
   printf("  push rax\n");
 }
 
+static void store(Type *ty) {
+  printf("  pop rdi\n");
+  printf("  pop rax\n");
+
+  if (ty->size == 4) {
+    printf("  mov [rax], edi\n");
+  } else {
+    assert(ty->size == 8);
+    printf("  mov [rax], rdi\n");
+  }
+
+  printf("  push rdi\n");
+}
+
 void gen(Node *node) {
   if (node->kind == ND_NULL) {
     return;
@@ -84,11 +98,7 @@ void gen(Node *node) {
   } else if (node->kind == ND_ASSIGN) {
     gen_lval(node->lhs);
     gen(node->rhs);
-
-    printf("  pop rdi\n");
-    printf("  pop rax\n");
-    printf("  mov [rax], edi\n");  // store 型はint=4bytesのみとみなす
-    printf("  push rdi\n");
+    store(node->ty);
     return;
   } else if (node->kind == ND_WHILE) {
     printf(".Lbegin%d:\n", labelseq);

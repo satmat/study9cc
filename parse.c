@@ -1,4 +1,4 @@
-#include <string.h>
+
 #include "9cc.h"
 
 Type *int_type = &(Type){ TY_INT, 4, 4};
@@ -49,6 +49,12 @@ Type *pointer_to(Type *base) {
   return ty;
 }
 
+Type *func_type(Type *return_ty) {
+  Type *ty = new_type(TY_FUNC, 1, 1);
+  ty->return_ty = return_ty;
+  return ty;
+}
+
 static Node *new_node(NodeKind kind) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
@@ -71,6 +77,7 @@ static Node *new_unary(NodeKind kind, Node *expr, Token *tok) {
 static Node *new_num(int val) {
   Node *node = new_node(ND_NUM);
   node->val = val;
+  node->ty = int_type;  // 整数のみでintと仮定
   return node;
 }
 
@@ -126,6 +133,14 @@ void add_type(Node* node) {
     return;
   case ND_LVAR:
     node->ty = node->var->ty;
+    return;
+  case ND_ADDR:
+    node->ty = pointer_to(node->lhs->ty);
+    return;
+  case ND_DEREF:
+    if (!node->lhs->ty->base)
+      error_at(token->str, "ポインタが不正です。");
+    node->ty = node->lhs->ty->base;
     return;
   }
 }
@@ -459,7 +474,9 @@ Node *primary() {
       node->kind = ND_FUNCCALL;
       node->funcname = strndup(tok->str, tok->len);
       node->args = func_args();
+      node->ty = int_type;  // グローバル変数を導入するまで暫定
       consume(")");
+      add_type(node);
       return node;
     }
 

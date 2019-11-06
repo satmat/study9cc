@@ -11,6 +11,7 @@ typedef struct Type Type;
 typedef enum {
   TY_INT,
   TY_PTR,
+  TY_FUNC,
 } TypeKind;
 
 struct Type {
@@ -19,6 +20,7 @@ struct Type {
   int align;
 
   Type *base;
+  Type *return_ty;
 };
 
 // ローカル変数の型

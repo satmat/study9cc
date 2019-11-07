@@ -131,13 +131,12 @@ void add_type(Node* node) {
   case ND_NE:
   case ND_LT:
   case ND_LE:
-    //node->ty = long_type;
     node->ty = int_type;
   case ND_ASSIGN:
   case ND_PTR_ADD:
   case ND_PTR_SUB:
   case ND_PTR_DIFF:
-    node->ty = node->rhs->ty;
+    node->ty = node->lhs->ty;
     return;
   case ND_LVAR:
     node->ty = node->var->ty;

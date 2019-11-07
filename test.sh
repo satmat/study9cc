@@ -58,5 +58,8 @@ try 42 'int foo(int a, int b){return a+b;} int main(){int c; c=foo(40,2); return
 try 2 'int foo(int a, int b){return b;} int main(){int c; c=foo(40,2); return c;}'
 try 11 'int foo(int a,int b,int c,int d,int e,int f){return f;} int main(){int c; c=foo(1,3,5,7,9,11); return c;}'
 try 2 'int main(){int a; a = 1; int *b; b = &a; *b = 2; return a;}'
+try 8 'int main(){int a; int *p; p = &a; p = p + 2; return p - &a;}'
+try 12 'int main(){int b; int *q; q = &b; q = q - 3; return &b - q;}'
+try 4 'int main(){int a; int b; a = 5; b = 2; int *p; int *q; p = &a; q = &b; return q - p;}'  # ローカル変数の定義順とメモリが確保される順が逆?
 
 echo OK

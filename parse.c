@@ -135,6 +135,8 @@ void add_type(Node* node) {
     node->ty = int_type;
   case ND_ASSIGN:
   case ND_PTR_ADD:
+  case ND_PTR_SUB:
+  case ND_PTR_DIFF:
     node->ty = node->rhs->ty;
     return;
   case ND_LVAR:
@@ -415,6 +417,19 @@ static Node *new_add(Node *lhs, Node *rhs) {
   error_at(token->str, "不正なオペランドです。");
 }
 
+static Node *new_sub(Node *lhs, Node *rhs) {
+  add_type(lhs);
+  add_type(rhs);
+
+  if (is_integer(lhs->ty) && is_integer(rhs->ty))
+    return new_binary(ND_SUB, lhs, rhs);
+  if (lhs->ty->base && is_integer(rhs->ty))
+    return new_binary(ND_PTR_SUB, lhs, rhs);
+  if (lhs->ty->base && rhs->ty->base)
+    return new_binary(ND_PTR_DIFF, lhs, rhs);
+  error_at(token->str, "不正なオペランドです。");
+}
+
 // add = mul ("+" mul | "-" mul)*
 static Node *add() {
   Node *node = mul();
@@ -423,7 +438,7 @@ static Node *add() {
     if (consume("+"))
       node = new_add(node, mul());
     else if (consume("-"))
-      node = new_binary(ND_SUB, node, mul());
+      node = new_sub(node, mul());
     else
       return node;
   }

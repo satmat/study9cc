@@ -1,6 +1,6 @@
 #include "9cc.h"
 
-Type *int_type = &(Type){ TY_INT, 4, 4};
+Type *int_type = &(Type){ TY_INT, 4, 4 };
 
 static LVar *locals;
 
@@ -8,6 +8,7 @@ static Node *declaration(void);
 static bool is_typename(void);
 static Node *stmt(void);
 static Node *stmt2(void);
+static Node *add(void);
 
 LVar *find_lvar(Token *tok) {
   for (LVar *var = locals; var; var = var->next)
@@ -36,6 +37,11 @@ static Type *new_type(TypeKind kind, int size, int align) {
   ty->size = size;
   ty->align = align;
   return ty;
+}
+
+bool is_integer(Type *ty) {
+  TypeKind k = ty->kind;
+  return k == TY_INT;
 }
 
 int align_to(int n, int align) {
@@ -128,6 +134,7 @@ void add_type(Node* node) {
     //node->ty = long_type;
     node->ty = int_type;
   case ND_ASSIGN:
+  case ND_PTR_ADD:
     node->ty = node->rhs->ty;
     return;
   case ND_LVAR:
@@ -395,13 +402,26 @@ Node *relational() {
   }
 }
 
+static Node *new_add(Node *lhs, Node *rhs) {
+  add_type(lhs);
+  add_type(rhs);
+
+  if (is_integer(lhs->ty) && is_integer(rhs->ty))
+    return new_binary(ND_ADD, lhs, rhs);
+  if (lhs->ty->base && is_integer(rhs->ty))
+    return new_binary(ND_PTR_ADD, lhs, rhs);
+  if (is_integer(lhs->ty) && rhs->ty->base)
+    return new_binary(ND_PTR_ADD, rhs, lhs);
+  error_at(token->str, "不正なオペランドです。");
+}
+
 // add = mul ("+" mul | "-" mul)*
-Node *add() {
+static Node *add() {
   Node *node = mul();
 
   for(;;) {
     if (consume("+"))
-      node = new_binary(ND_ADD, node, mul());
+      node = new_add(node, mul());
     else if (consume("-"))
       node = new_binary(ND_SUB, node, mul());
     else

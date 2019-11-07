@@ -37,7 +37,10 @@ struct LVar {
 // 抽象構文木のノードの種類
 typedef enum {
   ND_ADD,      // +
+  ND_PTR_ADD,  // ptr + num or num + ptr
   ND_SUB,      // -
+  ND_PTR_SUB,  // ptr - num
+  ND_PTR_DIFF, // ptr - ptr
   ND_MUL,      // *
   ND_DIV,      // /
   ND_ASSIGN,   // =
@@ -154,7 +157,6 @@ Node *assign();
 Node *expr();
 Node *equality();
 Node *relational();
-Node *add();
 Node *mul();
 Node *unary();
 Node *primary();

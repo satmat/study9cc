@@ -491,6 +491,8 @@ Node *func_args() {
 // primary = num
 //         | ident func-args?
 //         | "(" expr ")"
+//         | "sizeof" "(" type-name ")"
+//         | "sizeof" unary
 Node *primary() {
   // 次のトークンが"("なら、"(" expr ")"のはず
   if (consume("(")) {
@@ -499,7 +501,26 @@ Node *primary() {
     return node;
   }
 
-  Token *tok = consume_ident();
+  Token *tok;
+
+  if( consume("sizeof") ) {
+    tok = token;
+    if (consume("(")) {
+      if (is_typename()) {
+        Type *ty = basetype(NULL);
+        expect(")");
+        return new_num(ty->size);
+      }
+      token = tok->next;
+    }
+
+    Node *node = unary();
+    expect(")");
+    add_type(node);
+    return new_num(node->ty->size);
+  }
+
+  tok = consume_ident();
   if (tok) {
     Node *node = calloc(1, sizeof(Node));
 

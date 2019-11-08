@@ -61,5 +61,12 @@ try 2 'int main(){int a; a = 1; int *b; b = &a; *b = 2; return a;}'
 try 8 'int main(){int a; int *p; p = &a; p = p + 2; return p - &a;}'
 try 12 'int main(){int b; int *q; q = &b; q = q - 3; return &b - q;}'
 try 4 'int main(){int a; int b; a = 5; b = 2; int *p; int *q; p = &a; q = &b; return q - p;}'  # ローカル変数の定義順とメモリが確保される順が逆?
+try 4 'int main(){return sizeof(int);}'
+try 4 'int main(){int x; return sizeof(x);}'
+try 8 'int main(){int *x; return sizeof(x);}'
+try 4 'int main(){int *x; return sizeof(*x);}'
+try 4 'int main(){return sizeof(1);}'
+try 4 'int main(){return sizeof(sizeof(1));}'
+
 
 echo OK

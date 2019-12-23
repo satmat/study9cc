@@ -54,6 +54,13 @@ Type *pointer_to(Type *base) {
   return ty;
 }
 
+Type *array_of(Type *base, int len){
+  Type *ty = new_type(TY_ARRAY, base->size * len, base->align);
+  ty->base = base;
+  ty->array_len = len;
+  return ty;
+}
+
 Type *func_type(Type *return_ty) {
   Type *ty = new_type(TY_FUNC, 1, 1);
   ty->return_ty = return_ty;

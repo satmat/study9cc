@@ -12,6 +12,7 @@ typedef enum {
   TY_INT,
   TY_PTR,
   TY_FUNC,
+  TY_ARRAY,
 } TypeKind;
 
 struct Type {
@@ -20,6 +21,7 @@ struct Type {
   int align;
 
   Type *base;
+  int array_len;
   Type *return_ty;
 };
 

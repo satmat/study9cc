@@ -4,11 +4,14 @@ Type *int_type = &(Type){ TY_INT, 4, 4 };
 
 static LVar *locals;
 
+static Type *type_suffix(Type*);
 static Node *declaration(void);
 static bool is_typename(void);
 static Node *stmt(void);
 static Node *stmt2(void);
 static Node *add(void);
+static long const_expr(void);
+
 
 LVar *find_lvar(Token *tok) {
   for (LVar *var = locals; var; var = var->next)
@@ -190,19 +193,41 @@ static Type *basetype() {
   return ty;
 }
 
-// declarator = ident
+// declarator = "*"* ident type-suffix
 static Type *declarator(Type *ty, char **name) {
   while (consume("*"))
     ty = pointer_to(ty);
-  *name = expect_ident(&name);
+
+  *name = expect_ident();
+  return type_suffix(ty);
+}
+
+// type-suffix = ("[" const-expr? "]" type-suffix)?
+static Type *type_suffix(Type *ty) {
+  if (!consume("["))
+    return ty;
+
+  int sz = 0;
+  if (!consume("]")) {
+    sz = const_expr();
+    expect("]");
+  }
+
+  Token *tok = token;
+  ty = type_suffix(ty);
+
+  ty = array_of(ty, sz);
   return ty;
 }
+
 
 // param = declarator
 LVar *read_func_param(void) {
   Type *ty = basetype();
   char *name = NULL;
-  declarator(ty, &name);
+  ty = declarator(ty, &name);
+  ty = type_suffix(ty);
+
   LVar *lv = new_lvar(name, ty);
   return lv;
 }
@@ -257,13 +282,14 @@ Function *function(void) {
   return fn;
 }
 
-// declaration = 
+// declaration = basetype declarator type-suffix ";"
 static Node *declaration(void) {
   Token *tok = token;
   Type *ty = basetype();
 
   char *name = NULL;
   ty = declarator(ty, &name);
+  ty = type_suffix(ty);
   new_lvar(name, ty);
 
   if(consume(";")) {
@@ -368,6 +394,26 @@ Node *stmt2() {
 // expr = assign
 Node *expr() {
   return assign();
+}
+
+// 実装が大変なので数値リテラルのみ対応
+static long eval2(Node *node) {
+  switch (node->kind) {
+    case ND_NUM:
+      return node->val;
+  }
+
+  error("not a constant expression.");
+  return 0;
+}
+
+static long eval(Node *node) {
+  return eval2(node);
+}
+
+static long const_expr(void) {
+  // 条件演算子は未対応
+  return eval(expr());
 }
 
 // assign = equality ("=" assign)?

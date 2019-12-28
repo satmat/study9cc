@@ -68,5 +68,6 @@ try 4 'int main(){int *x; return sizeof(*x);}'
 try 4 'int main(){return sizeof(1);}'
 try 4 'int main(){return sizeof(sizeof(1));}'
 try 40 'int main(){int a[10]; return sizeof(a);}'
+try 3 'int main(){int a[2]; *a=1; *(a+1)=2; int* p; p=a; return *p+*(p+1);}'
 
 echo OK

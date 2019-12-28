@@ -11,6 +11,7 @@ static Node *stmt(void);
 static Node *stmt2(void);
 static Node *add(void);
 static long const_expr(void);
+static Node *postfix(void);
 
 
 LVar *find_lvar(Token *tok) {
@@ -83,7 +84,7 @@ static Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
   return node;
 }
 
-static Node *new_unary(NodeKind kind, Node *expr, Token *tok) {
+static Node *new_unary(NodeKind kind, Node *expr) {
   Node *node = new_node(kind);
   node->lhs = expr;
   return node;
@@ -514,16 +515,33 @@ Node *mul() {
 //       | "-"? primary
 //       | "*" unary
 //       | "&" unary
+//       | postfix
 Node *unary() {
   if (consume("+"))
     return primary();
   if (consume("-"))
     return new_binary(ND_SUB, new_num(0), primary());
   if (consume("*"))
-    return new_unary(ND_DEREF, unary(), token);
+    return new_unary(ND_DEREF, unary());
   if (consume("&"))
-    return new_unary(ND_ADDR, unary(), token);
-  return primary();
+    return new_unary(ND_ADDR, unary());
+  return postfix();
+}
+
+// postfix = primary ("[" expr "]")*
+static Node *postfix(void) {
+  Token *tok;
+  Node *node = primary();
+  for(;;) {
+    if (consume("[")) {
+      // x[y] is short for *(x+y)
+      Node  *exp = new_add(node, expr());
+      expect("]");
+      node = new_unary(ND_DEREF, exp);
+      continue;
+    }
+    return node;
+  }
 }
 
 // func-args = "(" (assign ("," assign )* )? ")"

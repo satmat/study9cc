@@ -9,7 +9,10 @@ static Var *locals;
 // Likewise, global variables are accumulated to this list.
 static Var *globals;
 
+static Type *basetype(void);
+static Type *declarator(Type *ty, char **name);
 static Type *type_suffix(Type*);
+static void global_var(void);
 static Node *declaration(void);
 static bool is_typename(void);
 static Node *stmt(void);
@@ -132,17 +135,22 @@ static bool is_function(void) {
 Program *program(void) {
   Function head = {};
   Function *cur = &head;
+  globals = NULL;
 
   while (!at_eof()) {
-    Function *fn = function();
-    if(!fn)
+    if (is_function()) {
+      Function *fn = function();
+      if(!fn)
+        continue;
+      cur->next = fn;
+      cur = cur->next;
       continue;
-    cur->next = fn;
-    cur = cur->next;
-    continue;
+    }
+    global_var();
   }
 
   Program *prog = calloc(1, sizeof(Program));
+  prog->globals = globals;
   prog->fns = head.next;
   return prog;
 }
@@ -312,6 +320,22 @@ Function *function(void) {
   fn->node = head.next;
   fn->locals = locals;
   return fn;
+}
+
+// global-var = basetype declarator type-suffix ";"
+static void global_var(void) {
+  Type *ty = basetype();
+  if (consume(";"))
+    return;
+
+  char *name = NULL;
+  Token *tok = token;
+  ty = declarator(ty, &name);
+  ty = type_suffix(ty);
+
+  new_gvar(name, ty);
+  expect(";");
+  return;
 }
 
 // declaration = basetype declarator type-suffix ";"

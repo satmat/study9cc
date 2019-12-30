@@ -137,6 +137,7 @@ struct Function {
 };
 
 typedef struct {
+  Var *globals;
   Function *fns;
 } Program;
 

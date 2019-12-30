@@ -235,11 +235,6 @@ static void emit_data(Program *prog) {
   }
 
   printf(".data\n");
-
-  for (Var *vl = prog->globals; vl; vl = vl->next) {
-    printf(".align %d\n", vl->ty->align);
-    printf("%s:\n", vl->name);
-  }
 }
 
 void load_arg(Var *var, int idx) {

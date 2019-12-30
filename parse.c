@@ -23,7 +23,11 @@ static Node *postfix(void);
 
 
 Var *find_var(Token *tok) {
+  // 本来はスコープ対応すべきだが実装簡略化のため省いている
   for (Var *var = locals; var; var = var->next)
+    if(strlen(var->name) == tok->len && !memcmp(tok->str, var->name, tok->len))
+      return var;
+  for (Var *var = globals; var; var = var->next)
     if(strlen(var->name) == tok->len && !memcmp(tok->str, var->name, tok->len))
       return var;
   return NULL;

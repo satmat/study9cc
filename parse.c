@@ -26,7 +26,7 @@ Var *find_lvar(Token *tok) {
   return NULL;
 }
 
-Var *new_var(char *name, Type *ty, bool is_local) {
+static Var *new_var(char *name, Type *ty, bool is_local) {
   Var *var = calloc(1, sizeof(Var));
   var->name = name;
   var->ty = ty;
@@ -34,10 +34,17 @@ Var *new_var(char *name, Type *ty, bool is_local) {
   return var;
 }
 
-Var *new_lvar(char *name, Type *ty) {
+static Var *new_lvar(char *name, Type *ty) {
   Var *var = new_var(name, ty, true);
   var->next = locals;
   locals = var;
+  return var;
+}
+
+static Var *new_gvar(char *name, Type *ty) {
+  Var *var = new_var(name, ty, false);
+  var->next = globals;
+  globals = var;
   return var;
 }
 

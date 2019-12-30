@@ -22,7 +22,7 @@ static long const_expr(void);
 static Node *postfix(void);
 
 
-Var *find_lvar(Token *tok) {
+Var *find_var(Token *tok) {
   for (Var *var = locals; var; var = var->next)
     if(strlen(var->name) == tok->len && !memcmp(tok->str, var->name, tok->len))
       return var;
@@ -662,7 +662,7 @@ Node *primary() {
     }
 
     // Variable
-    Var *lvar = find_lvar(tok);
+    Var *lvar = find_var(tok);
     if (lvar) {
       node->kind = ND_LVAR;
       node->var = lvar;

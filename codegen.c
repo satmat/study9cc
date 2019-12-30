@@ -222,6 +222,26 @@ void gen(Node *node) {
   printf("  push rax\n");
 }
 
+static void emit_data(Program *prog) {
+  for (Var *vl = prog->globals; vl; vl = vl->next)
+    printf(".global %s\n", vl->name);
+
+  printf(".bss\n");
+
+  for (Var *vl = prog->globals; vl; vl = vl->next) {
+    printf(".align %d\n", vl->ty->align);
+    printf("%s:\n", vl->name);
+    printf("  .zero %d\n", vl->ty->size);
+  }
+
+  printf(".data\n");
+
+  for (Var *vl = prog->globals; vl; vl = vl->next) {
+    printf(".align %d\n", vl->ty->align);
+    printf("%s:\n", vl->name);
+  }
+}
+
 void load_arg(Var *var, int idx) {
   // int
   printf("  mov [rbp-%d], %s\n", var->offset, argreg4[idx]);
@@ -259,5 +279,6 @@ void emit_text(Program *prog) {
 
 void codegen(Program *prog) {
   printf(".intel_syntax noprefix\n");
+  emit_data(prog);
   emit_text(prog);
 }

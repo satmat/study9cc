@@ -2,7 +2,12 @@
 
 Type *int_type = &(Type){ TY_INT, 4, 4 };
 
+// All local variable instances created during parsing are
+// accumulated to this list.
 static Var *locals;
+
+// Likewise, global variables are accumulated to this list.
+static Var *globals;
 
 static Type *type_suffix(Type*);
 static Node *declaration(void);

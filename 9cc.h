@@ -25,15 +25,19 @@ struct Type {
   Type *return_ty;
 };
 
-// ローカル変数の型
-typedef struct LVar LVar;
+// 変数の型
+typedef struct Var Var;
 
-// ローカル変数の型
-struct LVar {
-  LVar *next; // 次の変数かNULL
-  Type *ty;
-  char *name;
+// 変数の型
+struct Var {
+  char *name;    // Variable name
+  Type *ty;      // Type
+  bool is_local; // local or global
+
+  // Local Variable
   int offset; // RBPからのオフセット
+
+  Var *next; // 次の変数かNULL
 };
 
 // 抽象構文木のノードの種類
@@ -81,7 +85,7 @@ struct Node {
   Node *next;
 
   // 変数
-  LVar *var;
+  Var *var;
 
   // 整数リテラル
   int val;
@@ -125,10 +129,10 @@ typedef struct Function Function;
 struct Function {
   Function *next;
   char *name;
-  LVar *params;
+  Var *params;
 
   Node *node;
-  LVar *locals;
+  Var *locals;
   int stack_size;
 };
 

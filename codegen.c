@@ -222,7 +222,7 @@ void gen(Node *node) {
   printf("  push rax\n");
 }
 
-void load_arg(LVar *var, int idx) {
+void load_arg(Var *var, int idx) {
   // int
   printf("  mov [rbp-%d], %s\n", var->offset, argreg4[idx]);
 }
@@ -242,7 +242,7 @@ void emit_text(Program *prog) {
 
     // Push arguments to the stack
     int i = 0;
-    for (LVar *lv = fn->params; lv; lv = lv->next)
+    for (Var *lv = fn->params; lv; lv = lv->next)
       load_arg(lv, i++);
 
       // Emit code

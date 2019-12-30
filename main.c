@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
 
   for (Function *fn = prog->fns; fn; fn = fn->next) {
     int offset = 0;
-    for (LVar *lv = fn->locals; lv; lv = lv->next) {
+    for (Var *lv = fn->locals; lv; lv = lv->next) {
       offset = align_to(offset, lv->ty->align);
       offset += lv->ty->size;
       lv->offset = offset;

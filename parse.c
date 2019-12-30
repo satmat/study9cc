@@ -2,7 +2,7 @@
 
 Type *int_type = &(Type){ TY_INT, 4, 4 };
 
-static LVar *locals;
+static Var *locals;
 
 static Type *type_suffix(Type*);
 static Node *declaration(void);
@@ -14,22 +14,23 @@ static long const_expr(void);
 static Node *postfix(void);
 
 
-LVar *find_lvar(Token *tok) {
-  for (LVar *var = locals; var; var = var->next)
+Var *find_lvar(Token *tok) {
+  for (Var *var = locals; var; var = var->next)
     if(strlen(var->name) == tok->len && !memcmp(tok->str, var->name, tok->len))
       return var;
   return NULL;
 }
 
-LVar *new_var(char *name) {
-  LVar *var = calloc(1, sizeof(LVar));
+Var *new_var(char *name, Type *ty, bool is_local) {
+  Var *var = calloc(1, sizeof(Var));
   var->name = name;
+  var->ty = ty;
+  var->is_local = is_local;
   return var;
 }
 
-LVar *new_lvar(char *name, Type *ty) {
-  LVar *var = new_var(name);
-  var->ty = ty;
+Var *new_lvar(char *name, Type *ty) {
+  Var *var = new_var(name, ty, true);
   var->next = locals;
   locals = var;
   return var;
@@ -223,13 +224,13 @@ static Type *type_suffix(Type *ty) {
 
 
 // param = declarator
-LVar *read_func_param(void) {
+Var *read_func_param(void) {
   Type *ty = basetype();
   char *name = NULL;
   ty = declarator(ty, &name);
   ty = type_suffix(ty);
 
-  LVar *lv = new_lvar(name, ty);
+  Var *lv = new_lvar(name, ty);
   return lv;
 }
 
@@ -241,8 +242,8 @@ void read_func_params(Function *fn) {
   Token *tok = token;
 
 //  fn->params = read_func_param();
-//  LVar *cur = fn->params;
-  LVar *cur = read_func_param();
+//  Var *cur = fn->params;
+  Var *cur = read_func_param();
 
   while (!consume(")")) {
     expect(",");
@@ -607,7 +608,7 @@ Node *primary() {
     }
 
     // Variable
-    LVar *lvar = find_lvar(tok);
+    Var *lvar = find_lvar(tok);
     if (lvar) {
       node->kind = ND_LVAR;
       node->var = lvar;

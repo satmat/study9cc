@@ -110,6 +110,24 @@ static Node *new_num(int val) {
   return node;
 }
 
+// Determine whether the next top-level item is a function
+// or a lobal variable by looking ahead input tokens.
+static bool is_function(void) {
+  Token *tok = token;
+  bool isfunc = false;
+
+  Type *ty = basetype();
+
+  if(!consume(";")) {
+    char *name = NULL;
+    declarator(ty, &name);
+    isfunc = name && consume("(");
+  }
+
+  token = tok;
+  return isfunc;
+}
+
 // program = function*
 Program *program(void) {
   Function head = {};
@@ -591,7 +609,7 @@ Node *primary() {
     tok = token;
     if (consume("(")) {
       if (is_typename()) {
-        Type *ty = basetype(NULL);
+        Type *ty = basetype();
         expect(")");
         return new_num(ty->size);
       }

@@ -9,6 +9,7 @@
 typedef struct Type Type;
 
 typedef enum {
+  TY_CHAR,
   TY_INT,
   TY_PTR,
   TY_FUNC,
@@ -54,7 +55,7 @@ typedef enum {
   ND_NE,       // !=
   ND_LT,       // <
   ND_LE,       // <=
-  ND_LVAR,     // ローカル変数
+  ND_VAR,     // ローカル変数
   ND_FUNCCALL, // 関数呼び出し
   ND_RETURN,   // return
   ND_IF,       // if
@@ -105,6 +106,7 @@ typedef enum {
   TK_WHILE,    // while
   TK_FOR,      // for
   TK_INT,      // int
+  TK_CHAR,     // char
   TK_NUM,      // 整数トークン
   TK_EOF,      // 入力の終わりを表すトークン
 } TokenKind;

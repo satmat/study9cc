@@ -1,5 +1,6 @@
 #include "9cc.h"
 
+Type *char_type = &(Type){ TY_CHAR, 1, 1};
 Type *int_type = &(Type){ TY_INT, 4, 4 };
 
 // All local variable instances created during parsing are
@@ -65,7 +66,7 @@ static Type *new_type(TypeKind kind, int size, int align) {
 
 bool is_integer(Type *ty) {
   TypeKind k = ty->kind;
-  return k == TY_INT;
+  return k == TY_CHAR ||  k == TY_INT;
 }
 
 int align_to(int n, int align) {
@@ -192,11 +193,14 @@ void add_type(Node* node) {
   case ND_PTR_DIFF:
     node->ty = node->lhs->ty;
     return;
-  case ND_LVAR:
+  case ND_VAR:
     node->ty = node->var->ty;
     return;
   case ND_ADDR:
-    node->ty = pointer_to(node->lhs->ty);
+    if (node->lhs->ty->kind == TY_ARRAY)
+      node->ty = pointer_to(node->lhs->ty->base);
+    else
+      node->ty = pointer_to(node->lhs->ty);
     return;
   case ND_DEREF:
     if (!node->lhs->ty->base)
@@ -214,7 +218,8 @@ static Type *basetype() {
     error_at(token->str, "型名ではありません。");
 
   enum {
-    INT = 1 << 8,
+    INT  = 1 << 8,
+    CHAR = 1 << 4,
   };
 
   Type *ty = int_type;
@@ -223,10 +228,16 @@ static Type *basetype() {
   while (is_typename()) {
     Token *tok = token;
 
+    if (consume("char"))
+      counter += CHAR;
+
     if (consume("int"))
       counter += INT;
 
     switch (counter) {
+      case CHAR:
+        ty = char_type;
+        break;
       case INT:
         ty = int_type;
         break;
@@ -362,7 +373,7 @@ static Node *declaration(void) {
 
 // 次のトークンが型を示すものであればtrueを返す
 static bool is_typename(void) {
-  return peek("int");
+  return peek("int") || peek("char");
 }
 
 static Node *stmt(void) {
@@ -589,7 +600,6 @@ Node *unary() {
 
 // postfix = primary ("[" expr "]")*
 static Node *postfix(void) {
-  Token *tok;
   Node *node = primary();
   for(;;) {
     if (consume("[")) {
@@ -668,7 +678,7 @@ Node *primary() {
     // Variable
     Var *lvar = find_var(tok);
     if (lvar) {
-      node->kind = ND_LVAR;
+      node->kind = ND_VAR;
       node->var = lvar;
       return node;
     }

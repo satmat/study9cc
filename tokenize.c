@@ -49,7 +49,8 @@ bool consume(char *op) {
       token->kind != TK_IF &&
       token->kind != TK_ELSE &&
       token->kind != TK_FOR &&
-      token->kind != TK_INT ) ||
+      token->kind != TK_INT &&
+      token->kind != TK_CHAR ) ||
       strlen(op) != token->len ||
       memcmp(token->str, op, token->len))
     return false;
@@ -60,7 +61,8 @@ bool consume(char *op) {
 // 次のトークンが期待している文字列のときには、そのトークンを返す。
 // それ以外の場合にはNULLを返す。
 Token *peek(char *s) {
-  if ((token->kind != TK_INT) ||
+  if ((token->kind != TK_INT &&
+       token->kind != TK_CHAR) ||
        strlen(s) != token->len ||
        memcmp(token->str, s, token->len))
     return NULL;
@@ -86,7 +88,8 @@ void expect(char *op) {
         token->kind != TK_IF &&
         token->kind != TK_ELSE &&
         token->kind != TK_FOR &&
-        token->kind != TK_INT ) ||
+        token->kind != TK_INT &&
+        token->kind != TK_CHAR ) ||
       strlen(op) != token->len ||
       memcmp(token->str, op, token->len))
     error_at(token->str, "'%s'ではありません", op);
@@ -176,6 +179,12 @@ void tokenize() {
 
     if (strncmp(p, "else", 4) == 0 && !is_alnum(p[4])) {
       cur = new_token(TK_ELSE, cur, p, 4);
+      p += 4;
+      continue;
+    }
+
+    if (strncmp(p, "char", 4) == 0 && !is_alnum(p[4])) {
+      cur = new_token(TK_CHAR, cur, p, 4);
       p += 4;
       continue;
     }

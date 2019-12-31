@@ -1,5 +1,6 @@
 #include "9cc.h"
 
+static char *argreg1[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
 static char *argreg4[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
 static char *argreg8[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
@@ -9,7 +10,7 @@ char *funcname;
 // Pushes the given node's address to the stack.
 static void gen_addr(Node *node) {
   switch (node->kind) {
-  case ND_LVAR:
+  case ND_VAR:
     printf("  mov rax, rbp\n");
     printf("  sub rax, %d\n", node->var->offset);
     printf("  lea rax, [rbp-%d]\n", node->var->offset);
@@ -28,7 +29,9 @@ static void gen_lval(Node *node) {
 static void load(Type *ty) {
   printf("  pop rax\n");
 
-  if (ty->size == 4) {
+  if (ty->size == 1) {
+    printf("  movsx rax, byte ptr [rax]\n");
+  } else if (ty->size == 4) {
     printf("  movsxd rax, dword ptr [rax]\n");
   } else {
     assert(ty->size == 8);
@@ -41,7 +44,9 @@ static void store(Type *ty) {
   printf("  pop rdi\n");
   printf("  pop rax\n");
 
-  if (ty->size == 4) {
+  if (ty->size == 1) {
+    printf("  mov [rax], dil\n");
+  } else if (ty->size == 4) {
     printf("  mov [rax], edi\n");
   } else {
     assert(ty->size == 8);
@@ -64,9 +69,10 @@ void gen(Node *node) {
   } else if (node->kind == ND_NUM) {
     printf("  push %d\n", node->val);
     return;
-  } else if (node->kind == ND_LVAR) {
+  } else if (node->kind == ND_VAR) {
     gen_addr(node);
-    load(node->ty);
+    if (node->ty->kind != TY_ARRAY)
+      load(node->ty);
     return;
   } else if (node->kind == ND_FUNCCALL) {
     int nargs = 0;
@@ -238,8 +244,16 @@ static void emit_data(Program *prog) {
 }
 
 void load_arg(Var *var, int idx) {
-  // int
-  printf("  mov [rbp-%d], %s\n", var->offset, argreg4[idx]);
+  int sz = var->ty->size;
+  if (sz == 1) {
+    printf("  mov [rbp-%d], %s\n", var->offset, argreg1[idx]);
+  } else if (sz == 4) {
+    // int
+    printf("  mov [rbp-%d], %s\n", var->offset, argreg4[idx]);
+  } else {
+    assert(sz == 8);
+    printf("  mov [rbp-%d], %s\n", var->offset, argreg8[idx]);
+  }
 }
 
 void emit_text(Program *prog) {

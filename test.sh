@@ -71,5 +71,6 @@ try 40 'int main(){int a[10]; return sizeof(a);}'
 try 3 'int main(){int a[2]; *a=1; *(a+1)=2; int* p; p=a; return *p+*(p+1);}'
 try 3 'int main(){int a[2]; a[0]=1; a[1]=2; int* p; p=a; return *p+*(p+1);}'
 try 1 'int g; int main(){g=1; return g;}'
+try 3 'int main(){char x[3]; x[0] = -1; x[1] = 2; int y; y = 4; return x[0] + y;}'
 
 echo OK

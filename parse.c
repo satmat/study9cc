@@ -49,11 +49,19 @@ static Var *new_lvar(char *name, Type *ty) {
   return var;
 }
 
-static Var *new_gvar(char *name, Type *ty) {
+static Var *new_gvar(char *name, Type *ty, bool is_static) {
   Var *var = new_var(name, ty, false);
+  var->is_static = is_static;
   var->next = globals;
   globals = var;
   return var;
+}
+
+static char *new_label(void) {
+  static int cnt = 0;
+  char buf[20];
+  sprintf(buf, ".L.data.%d", cnt++);
+  return strndup(buf, 20);
 }
 
 static Type *new_type(TypeKind kind, int size, int align) {
@@ -115,6 +123,12 @@ static Node *new_num(int val) {
   Node *node = new_node(ND_NUM);
   node->val = val;
   node->ty = int_type;  // 整数のみでintと仮定
+  return node;
+}
+
+static Node *new_var_node(Var *var) {
+  Node *node = new_node(ND_VAR);
+  node->var = var;
   return node;
 }
 
@@ -337,6 +351,22 @@ Function *function(void) {
   return fn;
 }
 
+static Initializer *new_init_val(Initializer *cur, int sz, int val) {
+  Initializer *init = calloc(1, sizeof(Initializer));
+  init->sz = sz;
+  init->val = val;
+  cur->next = init;
+  return init;
+}
+
+static Initializer *gvar_init_string(char *p, int len) {
+  Initializer head = {};
+  Initializer *cur = &head;
+  for (int i = 0; i < len; i++)
+    cur = new_init_val(cur, 1, p[i]);
+  return head.next;
+}
+
 // global-var = basetype declarator type-suffix ";"
 static void global_var(void) {
   Type *ty = basetype();
@@ -348,7 +378,7 @@ static void global_var(void) {
   ty = declarator(ty, &name);
   ty = type_suffix(ty);
 
-  new_gvar(name, ty);
+  new_gvar(name, ty, false);
   expect(";");
   return;
 }
@@ -633,6 +663,8 @@ Node *func_args() {
 //         | "(" expr ")"
 //         | "sizeof" "(" type-name ")"
 //         | "sizeof" unary
+//         | str
+//         | num
 Node *primary() {
   // 次のトークンが"("なら、"(" expr ")"のはず
   if (consume("(")) {
@@ -660,13 +692,10 @@ Node *primary() {
     return new_num(node->ty->size);
   }
 
-  tok = consume_ident();
-  if (tok) {
-    Node *node = calloc(1, sizeof(Node));
-
+  if (tok = consume_ident()) {
     // Function call
     if (consume("(")) {
-      node->kind = ND_FUNCCALL;
+      Node *node = new_node(ND_FUNCCALL);
       node->funcname = strndup(tok->str, tok->len);
       node->args = func_args();
       node->ty = int_type;  // グローバル変数を導入するまで暫定
@@ -676,13 +705,21 @@ Node *primary() {
     }
 
     // Variable
-    Var *lvar = find_var(tok);
-    if (lvar) {
-      node->kind = ND_VAR;
-      node->var = lvar;
-      return node;
+    Var *var = find_var(tok);
+    if (var) {
+      return new_var_node(var);
     }
     error_at(tok->str, "未定義の変数です。");
+  }
+
+  tok = token;
+  if (token->kind == TK_STR) {
+    token = token->next;
+
+    Type *ty = array_of(char_type, token->cont_len);
+    Var *var = new_gvar(new_label(), ty, true);
+    var->initializer = gvar_init_string(token->contents, token->cont_len);
+    return new_var_node(var);
   }
 
   // そうでなければ数値のはず

@@ -6,7 +6,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 typedef struct Type Type;
+typedef struct Initializer Initializer;
+
+struct Initializer {
+  Initializer *next;
+
+  // Constant expression
+  int sz;
+  long val;
+};
 
 typedef enum {
   TY_CHAR,
@@ -37,6 +47,10 @@ struct Var {
 
   // Local Variable
   int offset; // RBPからのオフセット
+
+  // Global variable
+  bool is_static;
+  Initializer *initializer;
 
   Var *next; // 次の変数かNULL
 };

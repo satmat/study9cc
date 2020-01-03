@@ -6,7 +6,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 typedef struct Type Type;
+typedef struct Initializer Initializer;
+
+struct Initializer {
+  Initializer *next;
+
+  // Constant expression
+  int sz;
+  long val;
+};
 
 typedef enum {
   TY_CHAR,
@@ -37,6 +47,10 @@ struct Var {
 
   // Local Variable
   int offset; // RBPからのオフセット
+
+  // Global variable
+  bool is_static;
+  Initializer *initializer;
 
   Var *next; // 次の変数かNULL
 };
@@ -107,6 +121,7 @@ typedef enum {
   TK_FOR,      // for
   TK_INT,      // int
   TK_CHAR,     // char
+  TK_STR,      // 文字列リテラル
   TK_NUM,      // 整数トークン
   TK_EOF,      // 入力の終わりを表すトークン
 } TokenKind;
@@ -122,6 +137,9 @@ struct Token {
   Type *ty;        // kindがTK_NUMの場合、その数値
   char *str;       // トークン文字列
   int len;         // トークンの長さ
+
+  char *contents;  // String literal contents including terminating '\0'
+  char cont_len;   // String literal length
 };
 
 // 現在着目しているトークン
@@ -158,7 +176,6 @@ bool at_eof();
 Token *new_token(TokenKind kind, Token *cur, char *str, int len);
 int align_to(int n, int align);
 bool startswith(char *p, char *q);
-int is_alnum(char c);
 void tokenize();
 Program *program();
 Function *function();

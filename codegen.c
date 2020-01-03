@@ -11,10 +11,14 @@ char *funcname;
 static void gen_addr(Node *node) {
   switch (node->kind) {
   case ND_VAR:
-    printf("  mov rax, rbp\n");
-    printf("  sub rax, %d\n", node->var->offset);
-    printf("  lea rax, [rbp-%d]\n", node->var->offset);
-    printf("  push rax\n");
+    if (node->var->is_local) {
+      //printf("  mov rax, rbp\n");
+      //printf("  sub rax, %d\n", node->var->offset);
+      printf("  lea rax, [rbp-%d]\n", node->var->offset);
+      printf("  push rax\n");
+    } else {
+      printf("  push offset %s\n", node->var->name);
+    }
     return;
   case ND_DEREF:
     gen(node->lhs);

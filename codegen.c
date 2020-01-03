@@ -230,17 +230,37 @@ void gen(Node *node) {
 
 static void emit_data(Program *prog) {
   for (Var *vl = prog->globals; vl; vl = vl->next)
-    printf(".global %s\n", vl->name);
+    if (!vl->is_static)
+      printf(".global %s\n", vl->name);
 
   printf(".bss\n");
 
   for (Var *vl = prog->globals; vl; vl = vl->next) {
+    if (vl->initializer)
+      continue;
+
     printf(".align %d\n", vl->ty->align);
     printf("%s:\n", vl->name);
-    printf("  .zero %d\n", vl->ty->size);
+    if(vl->ty->size != 0)
+      printf("  .zero %d\n", vl->ty->size);
   }
 
   printf(".data\n");
+
+  for (Var *vl = prog->globals; vl; vl = vl->next) {
+    if (!vl->initializer)
+      continue;
+
+    printf(".align %d\n", vl->ty->align);
+    printf("%s:\n", vl->name);
+
+    for (Initializer *init = vl->initializer; init; init = init->next) {
+      if (init->sz == 1)
+        printf("  .byte %ld\n", init->val);
+      else
+        printf("  .%dbyte %ld\n", init->sz, init->val);
+    }
+  }
 }
 
 void load_arg(Var *var, int idx) {

@@ -714,11 +714,11 @@ Node *primary() {
 
   tok = token;
   if (token->kind == TK_STR) {
-    token = token->next;
+    token = token->next;  // returnする前に次にすすめる
 
-    Type *ty = array_of(char_type, token->cont_len);
+    Type *ty = array_of(char_type, tok->cont_len);
     Var *var = new_gvar(new_label(), ty, true);
-    var->initializer = gvar_init_string(token->contents, token->cont_len);
+    var->initializer = gvar_init_string(tok->contents, tok->cont_len);
     return new_var_node(var);
   }
 
